@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
 	"umbrellaX/network/tron"
 
-	t 
+	t "github.com/fbsobreira/gotron-sdk/pkg/client"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -25,7 +26,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-
+	
 	tx, err := tronCli.CreateTxTRX(
 		"TFz6Tt8k1QYb9aTjwh9NaLtuiScmtVW6rC",
 		"TBa3KfLYENJX336fZrYdXgx2esaUjHRjAW",
@@ -36,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	res, err := tronCli.SendTx(tx, "1db1510692540cccd2cc6cbfb8e0c53bfd8591770bb4f0c4bf00e283c1234079")
+	res, err := tronCli.SendTx(tx, os.Getenv("TRX_PRIVATE_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
