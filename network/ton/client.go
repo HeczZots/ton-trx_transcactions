@@ -32,15 +32,16 @@ func New(test bool) *Client {
 
 func (c *Client) Start(seed string) error {
 	ctx := context.Background()
-	if err := c.conn.AddConnection(ctx, "135.181.140.212:13206", "K0t3+IWLOXHYMvMcrGZDPs+pn58a17LFbnXoQkKc2xw="); err != nil {
+	if err := c.conn.AddConnectionsFromConfigUrl(ctx, "https://ton.org/global.config.json"); err != nil {
 		return err
 	}
 
 	c.cli = ton.NewAPIClient(c.conn)
+	// TODO: добавлять множество кошельков
 	if err := c.AddWallet(seed); err != nil {
 		return err
 	}
-	// deprecated 
+	// deprecated
 	// if err := c.getJettonAddress(usdtContract); err != nil {
 	// 	return err
 	// }
@@ -52,7 +53,7 @@ var usdtContract = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
 func (c *Client) AddWallet(recoveryPhrase string) error {
 	rp := strings.Split(recoveryPhrase, " ")
-	w, err := wallet.FromSeed(c.cli, rp, wallet.V3)
+	w, err := wallet.FromSeed(c.cli, rp, wallet.V4R2)
 	if err != nil {
 		return err
 	}

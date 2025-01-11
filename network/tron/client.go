@@ -15,7 +15,7 @@ func New(test bool) *Client {
 	if test {
 		rpcAddr = "grpc.nile.trongrid.io:50051"
 	}
-	
+	// TODO: сделать мапу адресс кошелька: приватный ключ
 	return &Client{
 		rpcAddr: rpcAddr,
 		cli:     t.NewGrpcClient(rpcAddr),
