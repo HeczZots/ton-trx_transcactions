@@ -30,7 +30,7 @@ func New(test bool) *Client {
 	}
 }
 
-func (c *Client) Start(seed string) error {
+func (c *Client) Start(seed string, wv wallet.Version) error {
 	ctx := context.Background()
 	if err := c.conn.AddConnectionsFromConfigUrl(ctx, "https://ton.org/global.config.json"); err != nil {
 		return err
@@ -38,7 +38,7 @@ func (c *Client) Start(seed string) error {
 
 	c.cli = ton.NewAPIClient(c.conn)
 	// TODO: добавлять множество кошельков
-	if err := c.AddWallet(seed); err != nil {
+	if err := c.AddWallet(seed, wv); err != nil {
 		return err
 	}
 	// deprecated
@@ -51,9 +51,9 @@ func (c *Client) Start(seed string) error {
 
 var usdtContract = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
-func (c *Client) AddWallet(recoveryPhrase string) error {
+func (c *Client) AddWallet(recoveryPhrase string, wv wallet.Version) error {
 	rp := strings.Split(recoveryPhrase, " ")
-	w, err := wallet.FromSeed(c.cli, rp, wallet.V4R2)
+	w, err := wallet.FromSeed(c.cli, rp, wv)
 	if err != nil {
 		return err
 	}

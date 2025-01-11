@@ -11,7 +11,7 @@ func main() {
 	cli := ton.New(false)
 	slog.Info("Adding ton client")
 
-	if err := cli.Start(os.Getenv("TON_SEED")); err != nil {
+	if err := cli.Start(os.Getenv("TON_SEED"), 42); err != nil {
 		log.Fatal(err)
 	}
 	slog.Info("Sending tx")

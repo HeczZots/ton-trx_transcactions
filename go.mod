@@ -6,6 +6,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/fbsobreira/gotron-sdk v0.0.0-20230907131216-1e824406fe8c
+	github.com/gorilla/mux v1.8.1
 	github.com/xssnick/tonutils-go v1.10.2
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.28.1
