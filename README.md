@@ -4,11 +4,11 @@
     Простой http server для отправки транзакций в сетях TRON и TON
     взаимодействует с любыми валютами используя смарт контракт отправляемого токена 
 
-    (tron/transaction? currency={currency}&fromAddress={fromAddress}&toAddress={toAddress}&amount={amount}),
-    в response – {hash: hash}
+    tron/transaction? currency={currency}&fromAddress={fromAddress}&toAddress={toAddress}&amount={amount}
+    response – {hash: hash}
     
-    (ton/transaction? currency={currency}&fromAddress={fromAddress}&toAddress={toAddress}&amount={amount}),
-    в response – {hash: hash}
+    ton/transaction? currency={currency}&fromAddress={fromAddress}&toAddress={toAddress}&amount={amount}
+    response – {hash: hash}
 
     не обязательные параметры - были установлены по ТЗ
     currency
@@ -31,4 +31,4 @@
     Освободить порт 8083 если он занят
 
     go run .
-``
+```
