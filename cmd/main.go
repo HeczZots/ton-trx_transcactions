@@ -4,24 +4,29 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"umbrellaX/network/ton"
-	"umbrellaX/network/tron"
+	"umbrellaX/chains/ton"
+	"umbrellaX/chains/tron"
 	"umbrellaX/server"
 )
 
 func main() {
-	tonCli := ton.New(false)
+	tonCli := ton.New(false, os.Getenv("TON_SEED"), "UQD6RpM5JZcBwCg7zINlmd2JQToStegSzoJxLb7g7utIcq0d")
 	slog.Info("Adding ton client")
 
-	if err := tonCli.Start(os.Getenv("TON_SEED"), 42); err != nil {
+	if err := tonCli.Start(); err != nil {
 		log.Fatal(err)
 	}
 
-	tronCli := tron.New(false)
+	slog.Info("Adding tron client")
+
+	tronCli := tron.New(false, os.Getenv("TRON_SECRET"), "TFz6Tt8k1QYb9aTjwh9NaLtuiScmtVW6rC")
 
 	if err := tronCli.Start(); err != nil {
 		log.Fatal(err)
 	}
-	
-	log.Fatal(server.New(tonCli, tronCli).Start("8080"))
+
+	port := "8080"
+	slog.Info("Starting server on ", "port", port)
+
+	log.Fatal(server.New(tonCli, tronCli).Start(port))
 }

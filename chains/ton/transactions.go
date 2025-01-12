@@ -15,7 +15,7 @@ import (
 const tonDecimals = 9
 const usdtDecimals = 6
 
-func (c *Client) SendTon(from, to string, amount float64, feeLimit float64) (hash string, err error) {
+func (c *Client) sendTon(from, to string, amount float64, feeLimit float64) (hash string, err error) {
 	// TODO: выбирать кошелек с какого отправлять
 	if c.w == nil {
 		return "", fmt.Errorf("wallet not initialized")
@@ -39,7 +39,7 @@ func (c *Client) SendTon(from, to string, amount float64, feeLimit float64) (has
 	return hex.EncodeToString(tx.Hash[:]), nil
 }
 
-func (c *Client) SendJetton(from, to, tokenAddress string, amount, feeLimit float64) (hash string, err error) {
+func (c *Client) sendJetton(from, to, tokenAddress string, amount, feeLimit float64) (hash string, err error) {
 	// TODO: выбирать кошелек с какого отправлять
 	if c.w == nil {
 		return "", fmt.Errorf("wallet not initialized")

@@ -12,25 +12,29 @@ import (
 )
 
 type Client struct {
-	conn    *liteclient.ConnectionPool
-	ctx     context.Context
-	cli     *ton.APIClient
-	w       *wallet.Wallet
-	jettons map[string]string
+	conn       *liteclient.ConnectionPool
+	ctx        context.Context
+	cli        *ton.APIClient
+	w          *wallet.Wallet
+	jettons    map[string]string
+	walletSeed []string
+	walletAddr string
 }
 
-func New(test bool) *Client {
+func New(test bool, walletAddress, seed string) *Client {
 	conn := liteclient.NewConnectionPool()
 	ctx := context.Background()
 
 	return &Client{
-		jettons: make(map[string]string),
-		ctx:     ctx,
-		conn:    conn,
+		jettons:    make(map[string]string),
+		ctx:        ctx,
+		conn:       conn,
+		walletAddr: walletAddress,
+		walletSeed: strings.Split(walletAddress, " "),
 	}
 }
 
-func (c *Client) Start(seed string, wv wallet.Version) error {
+func (c *Client) Start() error {
 	ctx := context.Background()
 	if err := c.conn.AddConnectionsFromConfigUrl(ctx, "https://ton.org/global.config.json"); err != nil {
 		return err
@@ -38,7 +42,7 @@ func (c *Client) Start(seed string, wv wallet.Version) error {
 
 	c.cli = ton.NewAPIClient(c.conn)
 	// TODO: добавлять множество кошельков
-	if err := c.AddWallet(seed, wv); err != nil {
+	if err := c.AddWallet(); err != nil {
 		return err
 	}
 	// deprecated
@@ -49,18 +53,20 @@ func (c *Client) Start(seed string, wv wallet.Version) error {
 	return nil
 }
 
-var usdtContract = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
-
-func (c *Client) AddWallet(recoveryPhrase string, wv wallet.Version) error {
-	rp := strings.Split(recoveryPhrase, " ")
-	w, err := wallet.FromSeed(c.cli, rp, wv)
-	if err != nil {
-		return err
-	}
-
-	c.w = w
-	return nil
+func (c *Client) Name() string {
+	return "ton"
 }
+
+func (c *Client) SendTx(currencyContract, to string, amount, feeLimit float64) (hash string, err error) {
+	switch currencyContract {
+	case "", "TON", "ton":
+		return c.sendTon("", to, amount, 0)
+	default:
+		return c.sendJetton("", currencyContract, to, amount, 0)
+	}
+}
+
+var usdtContract = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
 // deprecated
 func (c *Client) getJettonAddress(tokenAddress string) error {

@@ -15,14 +15,14 @@ import (
 
 const trxDecimals = 6
 
-func (c *Client) CreateTxTRC20(tokenAddr, from, to string, feeLimit, amount float64) (Tx *api.TransactionExtention, err error) {
+func (c *Client) createTxTRC20(tokenAddr, to string, feeLimit, amount float64) (Tx *api.TransactionExtention, err error) {
 	decimals, err := c.cli.TRC20GetDecimals(tokenAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	tx, err := c.cli.TRC20Send(
-		from, to,
+		c.walletAddress, to,
 		tokenAddr,
 		big.NewInt(convertAmount(amount, decimals.Int64())), // amount
 		convertAmount(amount, trxDecimals))                  // fee
@@ -33,9 +33,9 @@ func (c *Client) CreateTxTRC20(tokenAddr, from, to string, feeLimit, amount floa
 	return tx, nil
 }
 
-func (c *Client) CreateTxTRX(from, to string, feeLimit, amount float64) (Tx *api.TransactionExtention, err error) {
+func (c *Client) createTxTRX( to string, feeLimit, amount float64) (Tx *api.TransactionExtention, err error) {
 	tx, err := c.cli.Transfer(
-		from, to,
+		c.walletAddress, to,
 		convertAmount(amount, trxDecimals))
 	if err != nil {
 		return nil, err
@@ -45,8 +45,8 @@ func (c *Client) CreateTxTRX(from, to string, feeLimit, amount float64) (Tx *api
 	return tx, nil
 }
 
-func (c *Client) SendTx(tx *api.TransactionExtention, privateKey string) (*api.Return, error) {
-	signedTx, err := signTransaction(tx.Transaction, privateKey)
+func (c *Client) sendTx(tx *api.TransactionExtention) (*api.Return, error) {
+	signedTx, err := signTransaction(tx.Transaction, c.walletSecret)
 	if err != nil {
 		return nil, err
 	}

@@ -1,30 +1,29 @@
 package server
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
-	"umbrellaX/network/ton"
-	"umbrellaX/network/tron"
+	chain "umbrellaX/chains"
 
-	"github.com/fbsobreira/gotron-sdk/pkg/proto/api"
 	"github.com/gorilla/mux"
-	"google.golang.org/protobuf/proto"
 )
 
 type Server struct {
-	ton  *ton.Client
-	tron *tron.Client
+	chains map[string]chain.Chain
 }
 
-func New(tonClient *ton.Client, tronClient *tron.Client) *Server {
-	return &Server{
-		ton:  tonClient,
-		tron: tronClient,
+func New(chains ...chain.Chain) *Server {
+	s := &Server{
+		chains: make(map[string]chain.Chain),
 	}
+	for _, chain := range chains {
+		s.chains[chain.Name()] = chain
+	}
+
+	return s
 }
 
 func (s *Server) Start(port string) error {
@@ -34,78 +33,71 @@ func (s *Server) Start(port string) error {
 	return http.ListenAndServe(":"+port, r)
 }
 
-func (s *Server) handleTonTransaction(w http.ResponseWriter, r *http.Request) {
-	currency := r.URL.Query().Get("currency")
-	fromAddress := r.URL.Query().Get("fromAddress")
-	toAddress := r.URL.Query().Get("toAddress")
-	amount := r.URL.Query().Get("amount")
+type txRequest struct {
+	Currency string `json:"currency"`
+	From     string `json:"fromAddress"`
+	To       string `json:"toAddress"`
+	Amount   string `json:"amount"`
+	FeeLimit string `json:"feeLimit"`
+}
 
-	if fromAddress == "" || toAddress == "" || amount == "" {
+func (s *Server) handleTonTransaction(w http.ResponseWriter, r *http.Request) {
+	txReq := getQueryTxParams(r.URL.Query())
+
+	if txReq.To == "" || txReq.Amount == "" {
 		http.Error(w, "missing required parameters", http.StatusBadRequest)
 		return
 	}
 
 	var amountFloat float64
-	_, err := fmt.Sscan(amount, &amountFloat)
+	_, err := fmt.Sscan(txReq.Amount, &amountFloat)
 	if err != nil {
 		http.Error(w, "invalid amount", http.StatusBadRequest)
 		return
 	}
 
-	var txHash string
-	if currency == "" {
-		txHash, err = s.ton.SendTon(fromAddress, toAddress, amountFloat, 0)
-	} else {
-		txHash, err = s.ton.SendJetton(fromAddress, toAddress, currency, amountFloat, 0)
-	}
-
+	hash, err := s.chains["ton"].SendTx(txReq.Currency, txReq.To, amountFloat, 0)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	response := map[string]string{"hash": txHash}
+	response := map[string]string{"hash": hash}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
 func (s *Server) handleTronTransaction(w http.ResponseWriter, r *http.Request) {
-	currency := r.URL.Query().Get("currency")
-	fromAddress := r.URL.Query().Get("fromAddress")
-	toAddress := r.URL.Query().Get("toAddress")
-	amount := r.URL.Query().Get("amount")
+	txReq := getQueryTxParams(r.URL.Query())
 
-	if fromAddress == "" || toAddress == "" || amount == "" {
+	if txReq.To == "" || txReq.Amount == "" {
 		http.Error(w, "missing required parameters", http.StatusBadRequest)
 		return
 	}
 
 	var amountFloat float64
-	_, err := fmt.Sscan(amount, &amountFloat)
+	_, err := fmt.Sscan(txReq.Amount, &amountFloat)
 	if err != nil {
 		http.Error(w, "invalid amount", http.StatusBadRequest)
 		return
 	}
 
-	var tx *api.TransactionExtention
-	if currency == "" || currency == "TRX" {
-		tx, err = s.tron.CreateTxTRX(fromAddress, toAddress, 100, amountFloat)
-	} else {
-		tx, err = s.tron.CreateTxTRC20(currency, fromAddress, toAddress, 100, amountFloat)
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	rawData, err := proto.Marshal(tx.Transaction.GetRawData())
+	hash, err := s.chains["tron"].SendTx(txReq.Currency, txReq.To, amountFloat, 10)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
-	hash := sha256.Sum256(rawData)	
 
-	response := map[string]string{"hash": hex.EncodeToString(hash[:])}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]string{"hash": hash})
+}
+
+func getQueryTxParams(urlPath url.Values) txRequest {
+	return txRequest{
+		Currency: urlPath.Get("currency"),
+		From:     urlPath.Get("fromAddress"),
+		To:       urlPath.Get("toAddress"),
+		Amount:   urlPath.Get("amount"),
+		FeeLimit: urlPath.Get("feeLimit"),
+	}
 }
